@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4caf50">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>小學生數學練習｜橫式・直式・文字題</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧮</text></svg>">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;background:linear-gradient(160deg,#e8f5e9,#f1f8e9);min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+#header{background:linear-gradient(135deg,#43a047,#66bb6a);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,.18);flex-shrink:0}
+#header h1{font-size:1.15rem;display:flex;align-items:center;gap:8px}
+#header .score{background:rgba(255,255,255,.2);padding:4px 12px;border-radius:16px;font-size:.85rem;font-weight:700}
+#app{flex:1;display:flex;flex-direction:column}
+.screen{display:none;flex:1;flex-direction:column;padding:16px}
+.screen.active{display:flex}
+/* ── Menu ── */
+.title-big{text-align:center;font-size:1.6rem;font-weight:800;color:#2e7d32;margin:12px 0 4px}
+.subtitle{text-align:center;color:#6b8e6b;margin-bottom:8px;font-size:1rem}
+.explain-box{background:#e8f5e9;border:2px dashed #a5d6a7;border-radius:16px;padding:14px 16px;margin:12px 0;font-size:.92rem;color:#2e7d32;line-height:1.8}
+.explain-box b{color:#1b5e20}
+.explain-box .tiny{font-size:.78rem;color:#6b8e6b;margin-top:6px}
+.grade-label{font-size:.9rem;font-weight:700;color:#2e7d32;margin:18px 0 8px}
+.grade-row{display:flex;gap:8px;flex-wrap:wrap}
+.grade-chip{padding:10px 14px;border-radius:18px;border:2px solid #a5d6a7;background:#fff;color:#2e7d32;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .15s;text-align:center}
+.grade-chip:active{transform:scale(.95)}
+.grade-chip.selected{background:#43a047;color:#fff;border-color:#43a047}
+.grade-chip small{display:block;font-weight:400;font-size:.66rem;margin-top:2px;opacity:.8}
+.launch-btn{margin-top:24px;background:linear-gradient(135deg,#43a047,#2e7d32);color:#fff;border:none;padding:17px;border-radius:20px;font-size:1.15rem;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(46,125,50,.35);letter-spacing:1px}
+.launch-btn:active{transform:scale(.97)}
+.launch-btn:disabled{opacity:.4;cursor:not-allowed}
+/* ── Step indicator ── */
+#step-ind{display:flex;gap:8px;margin:4px 0 10px;flex-shrink:0}
+.step-pill{flex:1;background:#fff;border-radius:20px;padding:9px 6px;text-align:center;font-size:.78rem;font-weight:700;color:#999;border:2px solid #e0e0e0;opacity:.5;transition:all .2s}
+.step-pill.active{opacity:1;border-color:#43a047;color:#2e7d32;background:#e8f5e9}
+.step-pill.done{opacity:1;border-color:#81c784;color:#2e7d32;background:#c8e6c9}
+/* ── Progress ── */
+#progress-wrap{background:rgba(255,255,255,.6);border-radius:10px;height:12px;overflow:hidden;margin-bottom:10px;flex-shrink:0}
+#progress-bar{height:100%;background:linear-gradient(90deg,#66bb6a,#43a047);width:0;border-radius:10px;transition:width .3s}
+#q-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-shrink:0}
+#q-count{font-size:.85rem;color:#666;font-weight:600}
+#q-topic{font-size:.85rem;color:#2e7d32;font-weight:700}
+#question-card{background:#fff;border-radius:20px;padding:20px 18px;box-shadow:0 4px 16px rgba(0,0,0,.08);text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;position:relative}
+#question-text{font-size:1.4rem;font-weight:700;color:#333;line-height:1.7;word-break:break-word;margin:8px 0}
+#read-btn{align-self:center;background:#fff;border:2px solid #66bb6a;color:#2e7d32;font-size:1.6rem;width:54px;height:54px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,.1);margin:6px auto;transition:transform .15s}
+#read-btn:active{transform:scale(.9)}
+#read-btn.pulse{animation:pulse 1.5s ease-in-out infinite}
+#read-btn.hidden{display:none}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(102,187,106,.5)}50%{box-shadow:0 0 0 10px rgba(102,187,106,0)}}
+.vertical-calc{font-family:ui-monospace,Menlo,monospace;font-size:2rem;font-weight:700;color:#333;display:inline-block;line-height:1.45;text-align:right}
+.vertical-calc .vc-line{border-bottom:3px solid #333;padding:0 18px}
+.vc-ans{display:inline-block;min-width:2em;text-align:center;color:#2e7d32}
+#answer-input{font-size:1.8rem;font-weight:800;text-align:center;width:130px;padding:12px;border:3px solid #a5d6a7;border-radius:16px;outline:none;color:#2e7d32;background:#f1f8e9;margin:14px auto 8px}
+#answer-input:focus{border-color:#43a047}
+#submit-btn{margin-top:14px;background:#43a047;color:#fff;border:none;padding:15px;border-radius:16px;font-size:1.05rem;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+#submit-btn:active{transform:scale(.97)}
+#submit-btn:disabled{opacity:.4}
+#feedback{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:99;font-size:4rem;transition:transform .25s ease;pointer-events:none;text-shadow:0 3px 10px rgba(0,0,0,.2)}
+#feedback.show{transform:translate(-50%,-50%) scale(1)}
+#correct-msg{text-align:center;color:#2e7d32;font-weight:700;font-size:1rem;margin-top:8px;min-height:1.5em}
+/* result */
+.result-card{background:#fff;border-radius:24px;padding:30px 20px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.1)}
+.result-score{font-size:3.2rem;font-weight:900;color:#2e7d32;margin:8px 0}
+.result-stars{font-size:2.6rem;letter-spacing:6px;margin:6px 0}
+.result-detail{color:#666;margin:8px 0;font-size:.95rem}
+.result-msg{font-size:1.05rem;font-weight:700;color:#43a047;margin:10px 0}
+.result-btn{display:block;width:100%;margin-top:14px;background:#43a047;color:#fff;border:none;padding:15px;border-radius:16px;font-size:1.1rem;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+.result-btn.secondary{background:#fff;color:#43a047;border:2px solid #43a047}
+.result-btn:active{transform:scale(.97)}
+#q-card-wrap{flex:1;display:flex;flex-direction:column}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+.slide-in{animation:slideIn .3s ease}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>🧮 數學練習</h1>
+  <div class="score" id="header-score">完成 0/10</div>
+</div>
+
+<div id="app">
+  <!-- 主選單 -->
+  <div class="screen active" id="scr-menu">
+    <div class="title-big">小學生數學練習</div>
+    <div class="subtitle">每題三步驟,齊齊完成!</div>
+    <div class="explain-box">
+      📌 <b>每一題</b>都要做晒 3 個步驟:
+      <br>① 🔢 <b>橫式</b>計數 → ② 📊 <b>直式</b>對齊 → ③ 📝 <b>文字題</b>
+      <br><span class="tiny">三個步驟全部答啱,先算完成一題,先至進入下一題。</span>
+    </div>
+    <div class="grade-label">📚 揀年級</div>
+    <div class="grade-row" id="grade-row"></div>
+    <button class="launch-btn" id="launch-btn" disabled>🚀 開始練習</button>
+  </div>
+
+  <!-- 答題 -->
+  <div class="screen" id="scr-quiz">
+    <div id="q-header">
+      <span id="q-topic"></span>
+      <span id="q-count">題 1/10</span>
+    </div>
+    <div id="step-ind">
+      <div class="step-pill" id="st-h">① 🔢 橫式</div>
+      <div class="step-pill" id="st-v">② 📊 直式</div>
+      <div class="step-pill" id="st-w">③ 📝 文字題</div>
+    </div>
+    <div id="progress-wrap"><div id="progress-bar"></div></div>
+    <div id="q-card-wrap">
+      <div id="question-card">
+        <button id="read-btn" class="pulse hidden">🔊</button>
+        <div id="question-text"></div>
+        <div id="answer-zone"></div>
+        <div id="correct-msg"></div>
+      </div>
+      <button id="submit-btn">✅ 提交答案</button>
+    </div>
+  </div>
+
+  <!-- 結果 -->
+  <div class="screen" id="scr-result">
+    <div class="result-card">
+      <div>🏁</div>
+      <div class="result-score" id="r-score">0</div>
+      <div class="result-detail" id="r-detail"></div>
+      <div class="result-stars" id="r-stars">☆☆☆</div>
+      <div class="result-msg" id="r-msg"></div>
+      <button class="result-btn" id="r-again">🔁 再玩一次</button>
+      <button class="result-btn secondary" id="r-menu">🏠 返主選單</button>
+    </div>
+  </div>
+</div>
+
+<div id="feedback">✅</div>
+
+<script>
+/* ═══════════ 年級設定 ═══════════ */
+const GRADES = [
+  {id:1, name:'小一', desc:'20 以內加減'},
+  {id:2, name:'小二', desc:'100 加減・乘法'},
+  {id:3, name:'小三', desc:'乘除・三位數'},
+  {id:4, name:'小四', desc:'四則・多位數'}
+];
+const ROUND=10;
+let selGrade=null;
+let questions=[], qi=0, step=0, correct=0, totalAns=0;
+
+/* ═══════════ 題目生成 ═══════════ */
+function ri(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+// 生成一個核心算式（同一題三個 step 共用同一條數）
+function genCore(grade){
+  let a,b,op;
+  if(grade===1){a=ri(1,18);b=ri(1,20-a);op=Math.random()<.5?'+':'-';if(op==='-'&&a<b)[a,b]=[b,a];}
+  else if(grade===2){const m=Math.random();if(m<.45){a=ri(1,9);b=ri(1,9);op='×';}else if(m<.75){a=ri(0,89);b=ri(1,99-a);op='+';}else{a=ri(11,99);b=ri(1,a-1);op='-';}}
+  else if(grade===3){const m=Math.random();if(m<.35){a=ri(2,9);b=ri(2,9);op='×';}else if(m<.6){a=ri(100,899);b=ri(1,99);op='+';}else if(m<.8){a=ri(100,999);b=ri(1,a-1);op='-';}else{a=ri(12,99);b=ri(2,9);op='×';}}
+  else{const m=Math.random();if(m<.3){a=ri(12,99);b=ri(2,12);op='×';}else if(m<.55){a=ri(100,8999);b=ri(11,999);op='+';}else if(m<.8){a=ri(1000,9999);b=ri(11,999);op='-';}else{a=ri(12,99);b=ri(2,9);op='×';}}
+  let ans = op==='+'?a+b : op==='-'?a-b : a*b;
+  return {a,b,op,ans};
+}
+// 文字題模板（依操作符生成對應情境）
+const WORD_POOL={
+  '+':[
+    '小明有 {a} 粒糖,媽媽又俾多 {b} 粒,一共有幾多粒?',
+    '書包有 {a} 本書,再放多 {b} 本,而家一共有幾多本?',
+    '揾到 {a} 蚊,爸爸俾多 {b} 蚊,一共幾多蚊?',
+    '班上有 {a} 個女生,{b} 個男生,全班一共幾多人?'
+  ],
+  '-':[
+    '有 {a} 個橙,食咗 {b} 個,仲剩返幾多个?',
+    '巴士有 {a} 個乘客,落咗 {b} 個,車上仲有幾多个?',
+    '袋裏有 {a} 枝筆,送咗 {b} 枝俾人,仲有幾多枝?',
+    '有 {a} 元,買玩具用咗 {b} 元,仲剩幾多元?'
+  ],
+  '×':[
+    '每盤有 {a} 個蘋果,{b} 盤一共幾多个?',
+    '每盒有 {a} 枝筆,買咗 {b} 盒,一共幾多枝?',
+    '每日睇 {a} 頁書,睇 {b} 日,一共睇幾多頁?',
+    '一分鐘行 {a} 米,行 {b} 分鐘,一共行幾多米?'
+  ]
+};
+function makeWord(core){
+  const tpl=WORD_POOL[core.op];
+  const t=tpl[ri(0,tpl.length-1)];
+  return {text:t.replace('{a}',core.a).replace('{b}',core.b)};
+}
+function buildRound(){
+  questions=[];
+  for(let i=0;i<ROUND;i++){
+    const core=genCore(selGrade);
+    questions.push({core, word:makeWord(core)});
+  }
+}
+
+/* ═══════════ 渲染 ═══════════ */
+function verticalHTML(core){
+  const A=String(core.a), B=String(core.b);
+  const len=Math.max(A.length+1, B.length+1);
+  const pad=s=>s.padStart(len,' ').replace(/ /g,'&nbsp;');
+  const sign=core.op==='×'?'×':core.op;
+  return `<div class="vertical-calc">
+    <div>${pad(A)}</div>
+    <div>${sign}&nbsp;${pad(B)}</div>
+    <div class="vc-line">&nbsp;</div>
+  </div>`;
+}
+function stepHTML(){
+  const q=questions[qi], c=q.core;
+  if(step===0){ // 橫式
+    const sign=c.op==='×'?'×':c.op;
+    return {html:`<span style="font-size:2.4rem;color:#2e7d32;font-weight:800">${c.a} ${sign} ${c.b} = ?</span>`, ans:c.ans, label:'橫式計數', read:false};
+  }
+  if(step===1){ // 直式
+    return {html:verticalHTML(c), ans:c.ans, label:'直式計數', read:false};
+  }
+  // 文字題
+  return {html:`<span style="font-size:1.2rem;line-height:2.1;color:#333">${q.word.text}</span>`, ans:c.ans, label:'文字題', read:true};
+}
+function renderQ(){
+  const s=stepHTML();
+  document.getElementById('question-text').innerHTML=s.html;
+  document.getElementById('q-card-wrap').classList.remove('slide-in');
+  void document.getElementById('q-card-wrap').offsetWidth;
+  document.getElementById('q-card-wrap').classList.add('slide-in');
+  document.getElementById('q-topic').textContent=`${GRADES.find(g=>g.id===selGrade).name}・${s.label}`;
+  document.getElementById('q-count').textContent=`題 ${qi+1}/${ROUND}`;
+  document.getElementById('header-score').textContent=`完成 ${qi}/${ROUND}`;
+  document.getElementById('progress-bar').style.width=`${(qi/ROUND)*100}%`;
+  // step indicator
+  const pills=['st-h','st-v','st-w'];
+  for(let i=0;i<3;i++)document.getElementById(pills[i]).className='step-pill'+(i<step?' done':i===step?' active':'');
+  // answer zone
+  document.getElementById('answer-zone').innerHTML=`<input id="answer-input" type="number" inputmode="numeric" placeholder="?" autofocus>`;
+  document.getElementById('correct-msg').textContent='';
+  document.getElementById('submit-btn').disabled=false;
+  document.getElementById('submit-btn').textContent='✅ 提交答案';
+  // read btn（文字題 autoplay）
+  const rb=document.getElementById('read-btn');
+  if(s.read){rb.classList.remove('hidden');rb.classList.add('pulse');setTimeout(()=>speak(s.html),500);}
+  else{rb.classList.add('hidden');}
+  setTimeout(()=>{const inp=document.getElementById('answer-input');if(inp)inp.focus();},100);
+}
+function speak(html){
+  if(!('speechSynthesis' in window))return;
+  const txt=html.replace(/<[^>]+>/g,'').replace(/[?？]/g,'。');
+  const u=new SpeechSynthesisUtterance(txt);u.lang='zh-HK';u.rate=.9;
+  speechSynthesis.cancel();speechSynthesis.speak(u);
+}
+function submit(){
+  if(document.getElementById('submit-btn').disabled)return;
+  const inp=document.getElementById('answer-input');
+  if(!inp||inp.value===''||isNaN(Number(inp.value))){shake();return;}
+  const v=Number(inp.value);
+  const s=stepHTML();
+  document.getElementById('submit-btn').disabled=true;
+  totalAns++;
+  if(v===s.ans){
+    correct++;
+    showFeedback('✅');
+    document.getElementById('correct-msg').innerHTML='👍 答啱!';
+    document.getElementById('header-score').textContent=`答啱 ${correct}`;
+    setTimeout(nextstep,1100);
+  }else{
+    showFeedback('❌');
+    document.getElementById('correct-msg').innerHTML=`正確答案係 <b>${s.ans}</b>`;
+    setTimeout(nextstep,1500);
+  }
+}
+function nextstep(){
+  step++;
+  if(step>=3){step=0;qi++;}
+  if(qi>=ROUND)showResult();
+  else renderQ();
+}
+function showFeedback(e){const f=document.getElementById('feedback');f.textContent=e;f.classList.add('show');setTimeout(()=>f.classList.remove('show'),800);}
+function shake(){const c=document.getElementById('question-card');c.style.animation='shake .4s';setTimeout(()=>c.style.animation='',400);}
+const shk=document.createElement('style');shk.textContent='@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}';document.head.appendChild(shk);
+function showResult(){
+  document.getElementById('scr-quiz').classList.remove('active');
+  const steps=ROUND*3; // 總步驟數
+  const pct=correct/steps;
+  document.getElementById('r-score').textContent=`${correct}/${steps}`;
+  document.getElementById('r-detail').textContent=`完成 ${qi} 題 × 3 步驟,答啱 ${correct} 個步驟`;
+  document.getElementById('r-stars').textContent=pct>=.9?'⭐⭐⭐':pct>=.7?'⭐⭐':'⭐';
+  document.getElementById('r-msg').textContent=
+    pct>=.9?'🎉 好叻呀!數學小天才!':pct>=.7?'👍 做得好好!繼續努力!':'💪 加油!再試多一次會更好!';
+  document.getElementById('scr-result').classList.add('active');
+}
+
+/* ═══════════ 事件 ═══════════ */
+function renderMenu(){
+  document.getElementById('grade-row').innerHTML=GRADES.map(g=>
+    `<div class="grade-chip ${selGrade===g.id?'selected':''}" data-g="${g.id}">${g.name}<small>${g.desc}</small></div>`
+  ).join('');
+  document.querySelectorAll('.grade-chip').forEach(g=>g.addEventListener('click',()=>{selGrade=+g.dataset.g;renderMenu();}));
+  document.getElementById('launch-btn').disabled=!selGrade;
+}
+document.getElementById('launch-btn').addEventListener('click',()=>{qi=0;step=0;correct=0;totalAns=0;buildRound();renderQ();go('scr-quiz');});
+document.getElementById('submit-btn').addEventListener('click',submit);
+document.getElementById('read-btn').addEventListener('click',()=>{const s=stepHTML();speak(s.html);});
+document.getElementById('r-again').addEventListener('click',()=>{qi=0;step=0;correct=0;totalAns=0;buildRound();renderQ();go('scr-quiz');});
+document.getElementById('r-menu').addEventListener('click',()=>{go('scr-menu');renderMenu();});
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+renderMenu();
+</script>
+</body>
+</html>
