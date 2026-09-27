@@ -55,6 +55,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft Jheng
 .vc-ans{display:inline-block;min-width:2em;text-align:center;color:#2e7d32}
 #answer-input{font-size:1.8rem;font-weight:800;text-align:center;width:130px;padding:12px;border:3px solid #a5d6a7;border-radius:16px;outline:none;color:#2e7d32;background:#f1f8e9;margin:14px auto 8px}
 #answer-input:focus{border-color:#43a047}
+/* ── 數字選擇答案 ── */
+#opt-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px auto 8px;max-width:320px}
+.opt-btn{background:#fff;border:3px solid #c8e6c9;border-radius:20px;padding:22px 10px;font-size:1.8rem;font-weight:800;color:#2e7d32;cursor:pointer;transition:all .15s;box-shadow:0 3px 10px rgba(0,0,0,.08)}
+.opt-btn:active{transform:scale(.93)}
+.opt-btn.correct{background:#c8e6c9;border-color:#43a047;color:#1b5e20}
+.opt-btn.wrong{background:#ffcdd2;border-color:#e53935;color:#b71c1c}
+.opt-btn:disabled{cursor:default}
 #submit-btn{margin-top:14px;background:#43a047;color:#fff;border:none;padding:15px;border-radius:16px;font-size:1.05rem;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.15)}
 #submit-btn:active{transform:scale(.97)}
 #submit-btn:disabled{opacity:.4}
@@ -218,6 +225,34 @@ function stepHTML(){
   // 文字題
   return {html:`<span style="font-size:1.2rem;line-height:2.1;color:#333">${q.word.text}</span>`, ans:c.ans, label:'文字題', read:true};
 }
+// 生成 4 個數字選項（含正確答案）
+function genOpts(ans){
+  const opts=[ans];
+  const maxOpt=ans<40?40:ans+30;
+  let guard=0;
+  while(opts.length<4 && guard<50){
+    guard++;
+    let w=ans+ri(-12,12);
+    if(w<0)w=ans+ri(1,12);
+    if(w!==ans && !opts.includes(w))opts.push(w);
+  }
+  // 若不足 4 個,補少見數字
+  while(opts.length<4){
+    let w=ri(1,maxOpt);
+    if(!opts.includes(w))opts.push(w);
+  }
+  opts.sort(()=>Math.random()-.5);
+  return opts;
+}
+// 標記選項啱/錯
+function markOpts(picked, ans){
+  document.querySelectorAll('.opt-btn').forEach(b=>{
+    const v=Number(b.dataset.v);
+    b.disabled=true;
+    if(v===ans)b.classList.add('correct');
+    else if(v===picked)b.classList.add('wrong');
+  });
+}
 function renderQ(){
   const s=stepHTML();
   document.getElementById('question-text').innerHTML=s.html;
@@ -231,11 +266,35 @@ function renderQ(){
   // step indicator
   const pills=['st-h','st-v','st-w'];
   for(let i=0;i<3;i++)document.getElementById(pills[i]).className='step-pill'+(i<step?' done':i===step?' active':'');
-  // answer zone
-  document.getElementById('answer-zone').innerHTML=`<input id="answer-input" type="number" inputmode="numeric" placeholder="?" autofocus>`;
+  // answer zone — 數字選擇按鈕
+  const opts = genOpts(s.ans);
+  document.getElementById('answer-zone').innerHTML=
+    `<div id="opt-grid">${opts.map((o,i)=>`<button class="opt-btn" data-v="${o}">${o}</button>`).join('')}</div>`;
+  document.getElementById('submit-btn').style.display='none'; // 撳數字即提交,唔使提交掣
   document.getElementById('correct-msg').textContent='';
   document.getElementById('submit-btn').disabled=false;
-  document.getElementById('submit-btn').textContent='✅ 提交答案';
+    // 數字選項點擊 → 即時判斷
+  document.querySelectorAll('.opt-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      if(document.getElementById('submit-btn').disabled)return; // 已答
+      const v=Number(b.dataset.v);
+      const s=stepHTML();
+      markOpts(v, s.ans);
+      document.getElementById('submit-btn').disabled=true;
+      totalAns++;
+      if(v===s.ans){
+        correct++;
+        showFeedback('✅');
+        document.getElementById('correct-msg').innerHTML='👍 答啱!';
+        document.getElementById('header-score').textContent=`答啱 ${correct}`;
+        setTimeout(nextstep,1100);
+      }else{
+        showFeedback('❌');
+        document.getElementById('correct-msg').innerHTML=`正確答案係 <b>${s.ans}</b>`;
+        setTimeout(nextstep,1500);
+      }
+    });
+  });
   // read btn（文字題 autoplay）
   const rb=document.getElementById('read-btn');
   if(s.read){rb.classList.remove('hidden');rb.classList.add('pulse');setTimeout(()=>speak(s.html),500);}
