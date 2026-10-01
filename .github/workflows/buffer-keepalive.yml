@@ -1,0 +1,33 @@
+name: Buffer Keepalive
+
+on:
+  schedule:
+    # Every Monday 12:00 UTC = 20:00 HKT
+    - cron: '0 12 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  touch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Refresh buffer timestamp
+        run: |
+          printf "%s\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .buffer
+          git config user.name "buffer-keepalive[bot]"
+          git config user.email "41898282+buffer-keepalive[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain .buffer)" ]; then
+            git add .buffer
+            git commit -m "chore: weekly buffer refresh"
+            git push
+            echo "Buffer refreshed"
+          else
+            echo "Buffer unchanged"
+          fi
