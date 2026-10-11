@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4caf50">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>小學生數學練習｜文字題・直式・橫式</title>
+<title>小學生數學練習｜文字題</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧮</text></svg>">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -141,11 +141,11 @@ button:focus-visible,.grade-chip:focus-visible{outline:3px solid #e6a23c;outline
   <!-- 主選單 -->
   <div class="screen active" id="scr-menu">
     <div class="title-big">小學生數學練習</div>
-    <div class="subtitle">睇文字題,做直式,再做橫式!</div>
+    <div class="subtitle">讀文字題，計一次答案！</div>
     <div class="explain-box">
-      📌 <b>每一題</b>流程:
-      <br>📝 <b>睇文字題</b> → ① 📊 <b>直式</b>計數 → ② 🔢 <b>橫式</b>計數
-      <br><span class="tiny">答案要<b>逐個位</b>填數字,直式橫式都答啱先完成一題。</span>
+      📌 <b>每題只需計一次</b>
+      <br>📝 讀文字題 → ✏️ 填寫答案
+      <br><span class="tiny">可用直式或心算，填入答案即可繼續。</span>
     </div>
     <div class="grade-label">📚 揀年級</div>
     <div class="grade-row" id="grade-row"></div>
@@ -157,10 +157,6 @@ button:focus-visible,.grade-chip:focus-visible{outline:3px solid #e6a23c;outline
     <div id="q-header">
       <span id="q-topic"></span>
       <span id="q-count">題 1/10</span>
-    </div>
-    <div id="step-ind">
-      <div class="step-pill" id="st-v">① 📊 直式</div>
-      <div class="step-pill" id="st-h">② 🔢 橫式</div>
     </div>
     <div id="progress-wrap"><div id="progress-bar"></div></div>
     <!-- 文字題常駐 -->
@@ -207,7 +203,7 @@ const GRADES = [
 ];
 const ROUND=10;
 let selGrade=null;
-let questions=[], qi=0, step=0, correct=0, totalAns=0;
+let questions=[], qi=0, correct=0, totalAns=0;
 let digitVals=[]; // 每步 digit 值
 
 /* ═══════════ 題目生成 ═══════════ */
@@ -217,34 +213,41 @@ function genCore(grade){
   if(grade===1){a=ri(1,18);b=ri(1,20-a);op=Math.random()<.5?'+':'-';if(op==='-'&&a<b)[a,b]=[b,a];}
   else if(grade===2){const m=Math.random();if(m<.45){a=ri(1,9);b=ri(1,9);op='×';}else if(m<.75){a=ri(0,89);b=ri(1,99-a);op='+';}else{a=ri(11,99);b=ri(1,a-1);op='-';}}
   else if(grade===3){const m=Math.random();if(m<.35){a=ri(2,9);b=ri(2,9);op='×';}else if(m<.6){a=ri(100,899);b=ri(1,99);op='+';}else if(m<.8){a=ri(100,999);b=ri(1,a-1);op='-';}else{a=ri(12,99);b=ri(2,9);op='×';}}
-  else{const m=Math.random();if(m<.3){a=ri(12,99);b=ri(2,12);op='×';}else if(m<.55){a=ri(100,8999);b=ri(11,999);op='+';}else if(m<.8){a=ri(1000,9999);b=ri(11,999);op='-';}else{a=ri(12,99);b=ri(2,9);op='×';}}
-  let ans = op==='+'?a+b : op==='-'?a-b : a*b;
+  else{const m=Math.random();if(m<.25){a=ri(12,99);b=ri(2,12);op='×';}else if(m<.5){a=ri(100,8999);b=ri(11,999);op='+';}else if(m<.75){a=ri(1000,9999);b=ri(11,999);op='-';}else{b=ri(2,12);const quotient=ri(2,99);a=b*quotient;op='÷';}}
+  let ans = op==='+'?a+b : op==='-'?a-b : op==='×'?a*b : a/b;
   return {a,b,op,ans};
 }
+const CHARACTERS=['蒨妤','幸妤','高樂','爸爸','媽媽','子晴','朗朗','樂彤'];
 const WORD_POOL={
   '+':[
-    '小明有 {a} 粒糖,媽媽又俾多 {b} 粒,一共有幾多粒?',
-    '書包有 {a} 本書,再放多 {b} 本,而家一共有幾多本?',
-    '揾到 {a} 蚊,爸爸俾多 {b} 蚊,一共幾多蚊?',
-    '班上有 {a} 個女生,{b} 個男生,全班一共幾多人?'
+    '{name}有 {a} 粒糖,媽媽又俾多 {b} 粒,一共有幾多粒?',
+    '{name}有 {a} 本書,再買多 {b} 本,而家一共有幾多本?',
+    '{name}儲到 {a} 蚊,爸爸再俾 {b} 蚊,而家有幾多蚊?',
+    '{name}同朋友一共有 {a} 張貼紙,再收到 {b} 張,總共有幾多張?'
   ],
   '-':[
-    '有 {a} 個橙,食咗 {b} 個,仲剩返幾多个?',
-    '巴士有 {a} 個乘客,落咗 {b} 個,車上仲有幾多个?',
-    '袋裏有 {a} 枝筆,送咗 {b} 枝俾人,仲有幾多枝?',
-    '有 {a} 元,買玩具用咗 {b} 元,仲剩幾多元?'
+    '{name}有 {a} 個橙,食咗 {b} 個,仲剩返幾多个?',
+    '{name}帶咗 {a} 本書,借咗 {b} 本俾同學,仲有幾多本?',
+    '{name}有 {a} 枝筆,送咗 {b} 枝俾朋友,仲有幾多枝?',
+    '{name}有 {a} 元,買玩具用咗 {b} 元,仲剩幾多元?'
   ],
   '×':[
-    '每盤有 {a} 個蘋果,{b} 盤一共幾多个?',
-    '每盒有 {a} 枝筆,買咗 {b} 盒,一共幾多枝?',
-    '每日睇 {a} 頁書,睇 {b} 日,一共睇幾多頁?',
-    '一分鐘行 {a} 米,行 {b} 分鐘,一共行幾多米?'
+    '{name}每盤放 {a} 個蘋果,有 {b} 盤,一共有幾多个?',
+    '{name}每盒有 {a} 枝筆,買咗 {b} 盒,一共幾多枝?',
+    '{name}每日睇 {a} 頁書,連續睇 {b} 日,一共睇幾多頁?',
+    '{name}每行種 {a} 棵花,種咗 {b} 行,一共有幾多棵?'
+  ],
+  '÷':[
+    '{name}有 {a} 粒糖,平均分俾 {b} 個小朋友,每人有幾多粒?',
+    '{name}將 {a} 本書平均放入 {b} 個書架,每個書架有幾多本?',
+    '{name}有 {a} 個橙,每袋放 {b} 個,可以裝滿幾多袋?'
   ]
 };
 function makeWord(core){
-  const tpl=WORD_POOL[core.op];
-  const t=tpl[ri(0,tpl.length-1)];
-  return {text:t.replace('{a}',core.a).replace('{b}',core.b)};
+  const pool=WORD_POOL[core.op]||WORD_POOL['+'];
+  const tpl=pool[ri(0,pool.length-1)];
+  const name=CHARACTERS[ri(0,CHARACTERS.length-1)];
+  return {text:tpl.replace('{name}',name).replace('{a}',core.a).replace('{b}',core.b)};
 }
 function buildRound(){
   questions=[];
@@ -255,51 +258,30 @@ function buildRound(){
 }
 
 /* ═══════════ 渲染 ═══════════ */
-function verticalHTML(core){
-  const A=String(core.a), B=String(core.b);
-  const len=Math.max(A.length+1, B.length+1);
-  const pad=s=>s.padStart(len,' ').replace(/ /g,'&nbsp;');
-  const sign=core.op==='×'?'×':core.op;
-  return `<div class="vertical-calc">
-    <div>${pad(A)}</div>
-    <div>${sign}&nbsp;${pad(B)}</div>
-    <div class="vc-line">&nbsp;</div>
-  </div>`;
-}
-function stepDisplay(){
-  const q=questions[qi], c=q.core;
-  if(step===0){ // 直式
-    return {html:verticalHTML(c), label:'直式計數（逐個位填）'};
-  }
-  // 橫式
-  const sign=c.op==='×'?'×':c.op;
-  return {html:`${c.a} ${sign} ${c.b} = ?`, label:'橫式計數（逐個位填）'};
+function questionDisplay(core){
+  const sign=core.op==='×'?'×':core.op==='÷'?'÷':core.op;
+  return `${core.a} ${sign} ${core.b} = ?`;
 }
 function renderQ(){
   const q=questions[qi];
-  const s=stepDisplay();
-  // 文字題常駐
+  // 一題只顯示一次算式及一個答案，不再分直式／橫式重答
   document.getElementById('word-text').textContent=q.word.text;
-  // 計算區
-  document.getElementById('calc-title').textContent=s.label;
-  document.getElementById('calc-display').innerHTML=s.html;
-  // step indicator
-  document.getElementById('st-v').className='step-pill'+(step<1?' active':step>=1?' done':'');
-  document.getElementById('st-h').className='step-pill'+(step===1?' active':'');
+  document.getElementById('calc-title').textContent='計算一次，填入答案';
+  document.getElementById('calc-display').textContent=questionDisplay(q.core);
   // 題號/進度
   document.getElementById('q-topic').textContent=`${GRADES.find(g=>g.id===selGrade).name}・第 ${qi+1} 題`;
   document.getElementById('q-count').textContent=`題 ${qi+1}/${ROUND}`;
   document.getElementById('header-score').textContent=`完成 ${qi}/${ROUND}`;
   document.getElementById('progress-bar').style.width=`${(qi/ROUND)*100}%`;
   // 逐位 digit 輸入
-  buildDigitInput(s);
+  buildDigitInput();
   // 讀題
   document.getElementById('word-read-btn').classList.add('pulse');
   setTimeout(()=>speakWord(q.word.text),600);
   document.getElementById('correct-msg').textContent='';
 }
-function buildDigitInput(s){
-  const ans=s? stepHTML().ans : questions[qi].core.ans;
+function buildDigitInput(){
+  const ans=questions[qi].core.ans;
   const ansStr=String(ans);
   const n=ansStr.length;
   digitVals=new Array(n).fill('');
@@ -321,19 +303,15 @@ function buildDigitInput(s){
   });
   boxes[0].focus();
 }
-function stepHTML(){ // 攞當前 step 嘅答案
-  const q=questions[qi], c=q.core;
-  return {ans:c.ans, label:step===0?'直式':'橫式'};
-}
 function checkDigit(){
   if(document.getElementById('correct-msg').dataset.locked)return;
   document.getElementById('correct-msg').dataset.locked='1';
   const input=digitVals.join('');
-  const s=stepHTML();
+  const answer=questions[qi].core.ans;
   const v=parseInt(input,10);
   // 標記
   const boxes=document.querySelectorAll('.digit-box');
-  if(v===s.ans){
+  if(v===answer){
     boxes.forEach(b=>b.classList.add('correct'));
     correct++; showFeedback('✅');
     document.getElementById('correct-msg').innerHTML='👍 答啱!';
@@ -341,17 +319,16 @@ function checkDigit(){
     setTimeout(nextstep,1100);
   }else{
     // 顯示正確答案逐位
-    const ansStr=String(s.ans).split('');
+    const ansStr=String(answer).split('');
     boxes.forEach((b,i)=>{b.value=ansStr[i]||'';b.classList.add('wrong');});
     showFeedback('❌');
-    document.getElementById('correct-msg').innerHTML=`正確答案係 <b>${s.ans}</b>`;
+    document.getElementById('correct-msg').innerHTML=`正確答案係 <b>${answer}</b>`;
     setTimeout(nextstep,1500);
   }
 }
 function nextstep(){
   delete document.getElementById('correct-msg').dataset.locked;
-  step++;
-  if(step>=2){step=0;qi++;}
+  qi++;
   if(qi>=ROUND)showResult();
   else renderQ();
 }
@@ -364,10 +341,10 @@ function speakWord(text){
 function showFeedback(e){const f=document.getElementById('feedback');f.textContent=e;f.classList.add('show');setTimeout(()=>f.classList.remove('show'),800);}
 function showResult(){
   document.getElementById('scr-quiz').classList.remove('active');
-  const steps=ROUND*2;
+  const steps=ROUND;
   const pct=correct/steps;
   document.getElementById('r-score').textContent=`${correct}/${steps}`;
-  document.getElementById('r-detail').textContent=`完成 ${qi} 題 × 2 步驟（直式+橫式）,答啱 ${correct} 個`;
+  document.getElementById('r-detail').textContent=`完成 ${qi} 題，每題只答一次，共答啱 ${correct} 題`;
   document.getElementById('r-stars').textContent=pct>=.9?'⭐⭐⭐':pct>=.7?'⭐⭐':'⭐';
   document.getElementById('r-msg').textContent=
     pct>=.9?'🎉 好叻呀!數學小天才!':pct>=.7?'👍 做得好好!繼續努力!':'💪 加油!再試多一次會更好!';
@@ -382,9 +359,9 @@ function renderMenu(){
   document.querySelectorAll('.grade-chip').forEach(g=>g.addEventListener('click',()=>{selGrade=+g.dataset.g;renderMenu();}));
   document.getElementById('launch-btn').disabled=!selGrade;
 }
-document.getElementById('launch-btn').addEventListener('click',()=>{qi=0;step=0;correct=0;totalAns=0;buildRound();renderQ();go('scr-quiz');});
+document.getElementById('launch-btn').addEventListener('click',()=>{qi=0;correct=0;totalAns=0;buildRound();renderQ();go('scr-quiz');});
 document.getElementById('word-read-btn').addEventListener('click',()=>{const q=questions[qi];if(q)speakWord(q.word.text);});
-document.getElementById('r-again').addEventListener('click',()=>{qi=0;step=0;correct=0;totalAns=0;buildRound();renderQ();go('scr-quiz');});
+document.getElementById('r-again').addEventListener('click',()=>{qi=0;correct=0;totalAns=0;buildRound();renderQ();go('scr-quiz');});
 document.getElementById('r-menu').addEventListener('click',()=>{go('scr-menu');renderMenu();});
 function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 renderMenu();
